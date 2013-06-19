@@ -23,7 +23,6 @@ func twitterCardHandler(response http.ResponseWriter, request *http.Request) {
   outputFile := screenshotPath(opaqueId)
   url := TWITTER_CARD_URL + opaqueId
 
-  phantomJS := exec.Command("bin/screenshot", url, outputFile)
   cached := true
 
   if _, err := os.Stat(screenshotPath(opaqueId)); os.IsNotExist(err) {
@@ -31,12 +30,18 @@ func twitterCardHandler(response http.ResponseWriter, request *http.Request) {
   }
 
   // redirect to file if everything is fine
-  if !cached && phantomJS.Run() != nil {
-    response.WriteHeader(http.StatusInternalServerError)
+  if !cached {
+    go createThumbnail(url, outputFile)
+    response.WriteHeader(http.StatusAccepted)
   } else {
     response.Header().Set("Location", "/static/" + opaqueId + ".png")
     response.WriteHeader(http.StatusFound)
   }
+}
+
+func createThumbnail(url string, outputFile string) {
+  phantomJS := exec.Command("bin/screenshot", url, outputFile)
+  phantomJS.Run()
 }
 
 func Log(handler http.Handler) http.Handler {
