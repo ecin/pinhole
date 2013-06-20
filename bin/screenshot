@@ -6,6 +6,18 @@ var outputFile = system.args[2];
 
 var page = require("webpage").create();
 
+page.onResourceReceived = function(response) {
+  if (response.contentType.match(/font/)) {
+    page.evaluate(function() {
+      fontReceived();
+    });
+  }
+};
+
+page.onConsoleMessage = function() {
+  page.fontsLoaded = true;
+}
+
 page.constructor.prototype.fitViewport = function() {
   var dimensions = this.evaluate(function() {
     var height = document.body.offsetHeight > document.height ? document.body.offsetHeight : document.height;
@@ -26,9 +38,11 @@ page.settings.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_3) AppleW
 // Image outputted isn't retina-ed. https://gist.github.com/FiloSottile/2667199 might solve that problem
 page.open(url, function(status) {
   // wait 5 seconds for fonts to load. If only phantomJS supported CustomEvents...
-  setTimeout(function() {
-    page.fitViewport();
-    page.render(outputFile);
-    phantom.exit();
-  }, 5000);
+  setInterval(function() {
+    if (page.fontsLoaded) {
+      page.fitViewport();
+      page.render(outputFile);
+      phantom.exit();
+    }
+  }, 100);
 });
