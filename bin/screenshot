@@ -14,8 +14,11 @@ page.onResourceReceived = function(response) {
   }
 };
 
-page.onConsoleMessage = function() {
-  page.fontsLoaded = true;
+// window.callPhantom client-side to execute this callback
+page.onCallback = function(data) {
+  if (data.isReadyForScreenshot == true) {
+    page.isReadyForScreenshot = true;
+  }
 }
 
 page.constructor.prototype.fitViewport = function() {
@@ -37,9 +40,8 @@ page.settings.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_3) AppleW
 
 // Image outputted isn't retina-ed. https://gist.github.com/FiloSottile/2667199 might solve that problem
 page.open(url, function(status) {
-  // wait 5 seconds for fonts to load. If only phantomJS supported CustomEvents...
   setInterval(function() {
-    if (page.fontsLoaded) {
+    if (page.isReadyForScreenshot) {
       page.fitViewport();
       page.render(outputFile);
       phantom.exit();
